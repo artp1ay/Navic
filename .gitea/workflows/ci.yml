@@ -1,0 +1,101 @@
+# Gitea Actions workflow. Syntax is intentionally GitHub-compatible so the
+# same intent can run on both ecosystems with minimal divergence.
+#
+# Requires a self-hosted runner on macOS (Gitea's hosted Linux runner can't
+# build a macOS app). The runner must have Xcode installed and selectable
+# via `sudo xcode-select`.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test
+    runs-on: [self-hosted, macos]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          if [[ -d /Applications/Xcode.app ]]; then
+            selected_xcode="/Applications/Xcode.app"
+          else
+            selected_xcode="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -print | sort | tail -n 1)"
+          fi
+          test -n "${selected_xcode}"
+          sudo xcode-select -s "${selected_xcode}"
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Run unit tests
+        run: |
+          set -euo pipefail
+          xcodebuild test \
+            -project navic.xcodeproj \
+            -scheme navic \
+            -destination 'platform=macOS' \
+            -resultBundlePath build/TestResults.xcresult \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+  build_dmg_arm64:
+    name: Build DMG (arm64)
+    needs: test
+    runs-on: [self-hosted, macos]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          if [[ -d /Applications/Xcode.app ]]; then
+            selected_xcode="/Applications/Xcode.app"
+          else
+            selected_xcode="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -print | sort | tail -n 1)"
+          fi
+          test -n "${selected_xcode}"
+          sudo xcode-select -s "${selected_xcode}"
+      - run: Scripts/build_dmg.sh arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Navic-arm64-dmg
+          path: build/Navic-*-arm64.dmg
+          if-no-files-found: error
+          retention-days: 30
+
+  build_dmg_x86_64:
+    name: Build DMG (x86_64)
+    needs: test
+    runs-on: [self-hosted, macos]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          if [[ -d /Applications/Xcode.app ]]; then
+            selected_xcode="/Applications/Xcode.app"
+          else
+            selected_xcode="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -print | sort | tail -n 1)"
+          fi
+          test -n "${selected_xcode}"
+          sudo xcode-select -s "${selected_xcode}"
+      - run: Scripts/build_dmg.sh x86_64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Navic-x86_64-dmg
+          path: build/Navic-*-x86_64.dmg
+          if-no-files-found: error
+          retention-days: 30

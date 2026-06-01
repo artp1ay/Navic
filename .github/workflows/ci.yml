@@ -1,0 +1,130 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          if [[ -d /Applications/Xcode_26.5.0.app ]]; then
+            latest_xcode="/Applications/Xcode_26.5.0.app"
+          elif [[ -d /Applications/Xcode.app ]]; then
+            latest_xcode="/Applications/Xcode.app"
+          else
+            latest_xcode="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -print | sort | tail -n 1)"
+          fi
+          test -n "${latest_xcode}"
+          sudo xcode-select -s "${latest_xcode}"
+
+      - name: Show build tools
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Test app
+        run: |
+          set -euo pipefail
+          rm -rf build/TestDerivedData build/TestResults.xcresult
+          xcodebuild test \
+            -project navic.xcodeproj \
+            -scheme navic \
+            -destination 'platform=macOS' \
+            -derivedDataPath build/TestDerivedData \
+            -resultBundlePath build/TestResults.xcresult \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Save test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: build/TestResults.xcresult
+          if-no-files-found: ignore
+          retention-days: 14
+
+  build_dmg:
+    name: Package ${{ matrix.arch }}
+    needs: test
+    runs-on: macos-26
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, x86_64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          if [[ -d /Applications/Xcode_26.5.0.app ]]; then
+            latest_xcode="/Applications/Xcode_26.5.0.app"
+          elif [[ -d /Applications/Xcode.app ]]; then
+            latest_xcode="/Applications/Xcode.app"
+          else
+            latest_xcode="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -print | sort | tail -n 1)"
+          fi
+          test -n "${latest_xcode}"
+          sudo xcode-select -s "${latest_xcode}"
+
+      - name: Build installer
+        run: Scripts/build_dmg.sh ${{ matrix.arch }}
+
+      - name: Save installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Navic-${{ matrix.arch }}-dmg
+          path: build/Navic-*-${{ matrix.arch }}.dmg
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build_dmg
+    runs-on: macos-26
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Collect installers
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Navic-*-dmg
+          merge-multiple: true
+          path: artifacts/
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Navic ${{ github.ref_name }}
+          files: artifacts/*.dmg
+          body_path: RELEASE_NOTES.md
+          make_latest: true
