@@ -38,6 +38,15 @@ Navic is a small macOS companion for Navidrome. It reads the current playback st
 
 ## Installation
 
+### Homebrew
+
+```sh
+brew tap artp1ay/navic
+brew install --cask navic
+```
+
+### Manual Download
+
 Download the right DMG from [Releases](https://github.com/artp1ay/Navic/releases):
 
 - `Navic-1.0-arm64.dmg` for Apple Silicon Macs.
