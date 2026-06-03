@@ -384,6 +384,7 @@ final class AppSettings {
     @ObservationIgnored private var cachedCredentials: NavidromeCredentials??
 
     private enum Keys {
+        static let integrationSource = "integration.source"
         static let serverURL = "navidrome.serverURL"
         static let username = "navidrome.username"
         static let ignoreSSLErrors = "navidrome.ignoreSSLErrors"
@@ -421,6 +422,10 @@ final class AppSettings {
     }
 
     // MARK: - Persisted settings
+
+    var integrationSource: IntegrationSource {
+        didSet { defaults.set(integrationSource.rawValue, forKey: Keys.integrationSource); notifyChanged() }
+    }
 
     var serverURLString: String {
         didSet { defaults.set(serverURLString, forKey: Keys.serverURL); invalidateCredentialsCache(); notifyChanged() }
@@ -550,6 +555,7 @@ final class AppSettings {
         self.defaults = defaults
         self.keychain = keychain
 
+        self.integrationSource = IntegrationSource(rawValue: defaults.string(forKey: Keys.integrationSource) ?? "") ?? .navidrome
         self.serverURLString = defaults.string(forKey: Keys.serverURL) ?? ""
         self.username = defaults.string(forKey: Keys.username) ?? ""
         self.password = (try? keychain.string(for: KeychainKeys.password)) ?? ""

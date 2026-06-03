@@ -6,6 +6,16 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		5063068A2FD0618900CE5736 /* NavidromeAPIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506306762FD01EBF00CE5736 /* NavidromeAPIClientTests.swift */; };
+		5063068B2FD0618900CE5736 /* NavidromeCredentialsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506306772FD01EBF00CE5736 /* NavidromeCredentialsTests.swift */; };
+		5063068C2FD0618900CE5736 /* AppleMusicSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506306752FD01EBF00CE5736 /* AppleMusicSnapshotTests.swift */; };
+		5063068D2FD0618900CE5736 /* PlaybackStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506306782FD01EBF00CE5736 /* PlaybackStateTests.swift */; };
+		5063068E2FD0618900CE5736 /* SubsonicMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5063067A2FD01EBF00CE5736 /* SubsonicMappingTests.swift */; };
+		5063068F2FD0618900CE5736 /* AppleMusicNowPlayingProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506306742FD01EBF00CE5736 /* AppleMusicNowPlayingProviderTests.swift */; };
+		506306902FD0618900CE5736 /* ProviderFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506306792FD01EBF00CE5736 /* ProviderFactoryTests.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		50922B4A2FCCA356009EE661 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -17,8 +27,16 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		506306742FD01EBF00CE5736 /* AppleMusicNowPlayingProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleMusicNowPlayingProviderTests.swift; sourceTree = "<group>"; };
+		506306752FD01EBF00CE5736 /* AppleMusicSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleMusicSnapshotTests.swift; sourceTree = "<group>"; };
+		506306762FD01EBF00CE5736 /* NavidromeAPIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavidromeAPIClientTests.swift; sourceTree = "<group>"; };
+		506306772FD01EBF00CE5736 /* NavidromeCredentialsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavidromeCredentialsTests.swift; sourceTree = "<group>"; };
+		506306782FD01EBF00CE5736 /* PlaybackStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackStateTests.swift; sourceTree = "<group>"; };
+		506306792FD01EBF00CE5736 /* ProviderFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderFactoryTests.swift; sourceTree = "<group>"; };
+		5063067A2FD01EBF00CE5736 /* SubsonicMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubsonicMappingTests.swift; sourceTree = "<group>"; };
 		50922ACA2FC97627009EE661 /* navic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = navic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		50922B462FCCA356009EE661 /* navicTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = navicTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		50E87A2F2FD0B1F0009B5730 /* navic.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = navic.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -47,9 +65,25 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5063067B2FD01EBF00CE5736 /* navicTests */ = {
+			isa = PBXGroup;
+			children = (
+				506306742FD01EBF00CE5736 /* AppleMusicNowPlayingProviderTests.swift */,
+				506306752FD01EBF00CE5736 /* AppleMusicSnapshotTests.swift */,
+				506306762FD01EBF00CE5736 /* NavidromeAPIClientTests.swift */,
+				506306772FD01EBF00CE5736 /* NavidromeCredentialsTests.swift */,
+				506306782FD01EBF00CE5736 /* PlaybackStateTests.swift */,
+				506306792FD01EBF00CE5736 /* ProviderFactoryTests.swift */,
+				5063067A2FD01EBF00CE5736 /* SubsonicMappingTests.swift */,
+			);
+			path = navicTests;
+			sourceTree = "<group>";
+		};
 		50922AC12FC97627009EE661 = {
 			isa = PBXGroup;
 			children = (
+				50E87A2F2FD0B1F0009B5730 /* navic.xctestplan */,
+				5063067B2FD01EBF00CE5736 /* navicTests */,
 				50922ACC2FC97627009EE661 /* navic */,
 				50922B3F2FC9BD25009EE661 /* Frameworks */,
 				50922ACB2FC97627009EE661 /* Products */,
@@ -185,6 +219,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5063068A2FD0618900CE5736 /* NavidromeAPIClientTests.swift in Sources */,
+				5063068B2FD0618900CE5736 /* NavidromeCredentialsTests.swift in Sources */,
+				5063068C2FD0618900CE5736 /* AppleMusicSnapshotTests.swift in Sources */,
+				5063068D2FD0618900CE5736 /* PlaybackStateTests.swift in Sources */,
+				5063068E2FD0618900CE5736 /* SubsonicMappingTests.swift in Sources */,
+				5063068F2FD0618900CE5736 /* AppleMusicNowPlayingProviderTests.swift in Sources */,
+				506306902FD0618900CE5736 /* ProviderFactoryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -323,6 +364,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				AUTOMATION_APPLE_EVENTS = YES;
+				CODE_SIGN_ENTITLEMENTS = navic/navic.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -343,6 +386,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Navic;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Navic reads the currently playing track from the Music app when Apple Music is the selected source.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -368,6 +412,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				AUTOMATION_APPLE_EVENTS = YES;
+				CODE_SIGN_ENTITLEMENTS = navic/navic.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -390,6 +436,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Navic;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Navic reads the currently playing track from the Music app when Apple Music is the selected source.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

@@ -1,0 +1,30 @@
+{
+  "configurations" : [
+    {
+      "id" : "5062617D-F420-4649-9325-0E434F3FC329",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:navic.xcodeproj",
+      "identifier" : "50922AC92FC97627009EE661",
+      "name" : "navic"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:navic.xcodeproj",
+        "identifier" : "50922B452FCCA356009EE661",
+        "name" : "navicTests"
+      }
+    }
+  ],
+  "version" : 1
+}
