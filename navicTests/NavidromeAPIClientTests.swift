@@ -3,6 +3,10 @@ import Foundation
 import Testing
 @testable import navic
 
+// Tests in this suite share a single URLProtocol stub registered against a
+// class-level static. Run them one at a time so concurrent tests don't
+// overwrite each other's handler and end up reading the wrong response.
+@Suite(.serialized)
 struct NavidromeAPIClientTests {
     @Test func nowPlayingBuildsAuthenticatedSubsonicRequest() async throws {
         let recorder = URLRequestRecorder(
@@ -136,7 +140,7 @@ struct NavidromeAPIClientTests {
 private final class URLRequestRecorder: @unchecked Sendable {
     private let lock = NSLock()
     private var request: URLRequest?
-    let session: URLSession
+    var session: URLSession!
 
     var lastRequest: URLRequest? {
         lock.lock()
@@ -203,7 +207,7 @@ private final class RequestHandler: @unchecked Sendable {
             override func stopLoading() {}
         }
 
-        ProtocolStub.handler = self
         self.protocolClass = ProtocolStub.self
+        ProtocolStub.handler = self
     }
 }

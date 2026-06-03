@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>A macOS menu bar widget for Navidrome now playing.</strong><br>
+  <strong>A macOS menu bar widget for Navidrome and Apple Music now playing.</strong><br>
   Navic shows the current track, artwork, and playback state in a compact floating widget.
 </p>
 
@@ -21,9 +21,10 @@
 
 ## What It Does
 
-Navic is a small macOS companion for Navidrome. It reads the current playback state through the Subsonic API and keeps a floating now-playing widget on screen.
+Navic is a small macOS companion that mirrors what you're listening to in a floating now-playing widget. Pick your source on the Source tab: a remote Navidrome server (Subsonic API) or the Music app running on this Mac. Auto mode switches between them based on whichever is currently playing.
 
 - Shows title, artist, album, artwork, and playback state.
+- Sources: Navidrome (Subsonic API), Apple Music (local Music.app), or Auto.
 - Runs from the menu bar, with an optional Dock icon.
 - Includes several widget layouts and visual styles.
 - Can hide itself when playback is idle.
@@ -33,7 +34,9 @@ Navic is a small macOS companion for Navidrome. It reads the current playback st
 ## Requirements
 
 - macOS 14.6 or later.
-- A Navidrome server with Subsonic API access enabled.
+- At least one source:
+  - A Navidrome server with Subsonic API access enabled, and/or
+  - The Music app on this Mac (for the Apple Music source).
 - Xcode 26 or later for development.
 
 ## Installation
@@ -60,7 +63,10 @@ The current release artifacts are unsigned. macOS may ask you to confirm that yo
 
 1. Open Navic.
 2. Choose Settings from the menu bar item.
-3. Enter your Navidrome server URL, username, and password.
+3. On the **Source** tab, pick Navidrome, Apple Music, or Auto.
+   - **Navidrome:** enter your server URL, username, and password.
+   - **Apple Music:** the first time Navic queries Music, macOS will ask you to grant automation access — accept it. You can revoke it later in System Settings → Privacy & Security → Automation.
+   - **Auto:** uses Music when it's playing, falls back to Navidrome otherwise.
 4. Pick the widget style you want to use.
 
 ## Development

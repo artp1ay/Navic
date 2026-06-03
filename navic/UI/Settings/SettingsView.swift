@@ -9,18 +9,18 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             ConnectionTab(settings: settings, coordinator: coordinator)
-                .tabItem { Label("Navidrome", systemImage: "network") }
+                .tabItem { Label("Source", systemImage: "dot.radiowaves.left.and.right") }
             PresetsTab(settings: settings)
-                .modifier(RequiresCredentialsModifier(configured: areCredentialsConfigured))
+                .modifier(RequiresSourceModifier(configured: isSourceConfigured))
                 .tabItem { Label("Presets", systemImage: "square.stack.3d.up") }
             WidgetTab(settings: settings)
-                .modifier(RequiresCredentialsModifier(configured: areCredentialsConfigured))
+                .modifier(RequiresSourceModifier(configured: isSourceConfigured))
                 .tabItem { Label("Widget", systemImage: "macwindow") }
             ArtworkTab(settings: settings)
-                .modifier(RequiresCredentialsModifier(configured: areCredentialsConfigured))
+                .modifier(RequiresSourceModifier(configured: isSourceConfigured))
                 .tabItem { Label("Artwork", systemImage: "photo") }
             TypographyTab(settings: settings)
-                .modifier(RequiresCredentialsModifier(configured: areCredentialsConfigured))
+                .modifier(RequiresSourceModifier(configured: isSourceConfigured))
                 .tabItem { Label("Typography", systemImage: "textformat") }
             AboutTab()
                 .tabItem { Label("About", systemImage: "info.circle") }
@@ -28,16 +28,19 @@ struct SettingsView: View {
         .frame(minWidth: 760, idealWidth: 820, maxWidth: 900, minHeight: 580, idealHeight: 620, maxHeight: 720)
     }
 
-    /// "Configured" = the credentials are structurally complete (URL parses,
-    /// username and password present). This deliberately does NOT depend on
-    /// whether the server is currently reachable — a dropped network connection
-    /// should not lock the user out of widget settings they already had working.
-    private var areCredentialsConfigured: Bool {
-        settings.credentials != nil
+    /// "Configured" depends on which integration source the user picked. For
+    /// Navidrome we need structurally-complete credentials; for Apple Music
+    /// nothing extra is required beyond the picker itself — the widget will
+    /// simply sit empty until Music starts playing.
+    private var isSourceConfigured: Bool {
+        switch settings.integrationSource {
+        case .navidrome: return settings.credentials != nil
+        case .appleMusic, .auto: return true
+        }
     }
 }
 
-private struct RequiresCredentialsModifier: ViewModifier {
+private struct RequiresSourceModifier: ViewModifier {
     let configured: Bool
 
     func body(content: Content) -> some View {
@@ -50,7 +53,7 @@ private struct RequiresCredentialsModifier: ViewModifier {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 28))
                         .foregroundStyle(.secondary)
-                    Text("Configure Navidrome server credentials to access widget settings.")
+                    Text("Finish configuring the source on the Source tab to access widget settings.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -73,67 +76,27 @@ private struct ConnectionTab: View {
 
     var body: some View {
         Form {
-            Section {
-                ConnectionStatusBanner(status: status)
+            Section("Source") {
+                Picker("Music source", selection: $settings.integrationSource) {
+                    ForEach(IntegrationSource.allCases) { source in
+                        Label(source.displayName, systemImage: source.systemImageName)
+                            .tag(source)
+                    }
+                }
+                .pickerStyle(.segmented)
+                Text(sourceDescription)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
-            Section("Server") {
-                TextField("Server URL", text: $draft.serverURLString, prompt: Text("https://navidrome.example.com"))
-                    .textContentType(.URL)
-                TextField("Username", text: $draft.username)
-                    .textContentType(.username)
-                SecureField("Password", text: $draft.password)
-                    .textContentType(.password)
-                Toggle(isOn: $draft.ignoreSSLErrors) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Ignore SSL certificate errors")
-                        Text("Use only for self-signed or private Navidrome certificates.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                HStack(spacing: 10) {
-                    Button {
-                        applyDraft()
-                    } label: {
-                        Text("Apply")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut(.return, modifiers: [.command])
-                    .disabled(!isDraftDirty)
-
-                    Button {
-                        Task { await testConnection() }
-                    } label: {
-                        if isTesting {
-                            ProgressView().controlSize(.small)
-                        }
-                        Text(isTesting ? "Testing..." : "Test connection")
-                    }
-                    .disabled(isTesting)
-
-                    if let pingResult {
-                        Text(pingResult)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    Button("Revert") {
-                        draft = ServerDraft(settings: settings)
-                    }
-                    .buttonStyle(.link)
-                    .foregroundStyle(isDraftDirty ? Color.red : Color.red.opacity(0.35))
-                    .disabled(!isDraftDirty)
-                }
-                if isDraftDirty {
-                    Text("You have unsaved changes. Press Apply to connect with the new credentials.")
-                        .font(.footnote)
-                        .foregroundStyle(.orange)
-                }
+            switch settings.integrationSource {
+            case .navidrome:
+                navidromeSections
+            case .appleMusic:
+                appleMusicSections
+            case .auto:
+                navidromeSections
+                appleMusicSections
             }
 
             Section("App icon") {
@@ -163,15 +126,102 @@ private struct ConnectionTab: View {
         .padding()
         .onAppear { draft = ServerDraft(settings: settings) }
         .task { await refreshStatus() }
-        .task(id: credentialsStatusKey) { await refreshStatus() }
+        .task(id: connectionStatusKey) { await refreshStatus() }
+    }
+
+    private var sourceDescription: String {
+        switch settings.integrationSource {
+        case .auto:
+            return "Mirrors whichever player is currently playing — Music if it has a track, otherwise Navidrome."
+        case .navidrome:
+            return "Polls a remote Navidrome server over the Subsonic API."
+        case .appleMusic:
+            return "Reads the now-playing track from the Music app running on this Mac."
+        }
+    }
+
+    @ViewBuilder
+    private var navidromeSections: some View {
+        Section {
+            ConnectionStatusBanner(status: status)
+        }
+
+        Section("Server") {
+            TextField("Server URL", text: $draft.serverURLString, prompt: Text("https://navidrome.example.com"))
+                .textContentType(.URL)
+            TextField("Username", text: $draft.username)
+                .textContentType(.username)
+            SecureField("Password", text: $draft.password)
+                .textContentType(.password)
+            Toggle(isOn: $draft.ignoreSSLErrors) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Ignore SSL certificate errors")
+                    Text("Use only for self-signed or private Navidrome certificates.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            HStack(spacing: 10) {
+                Button {
+                    applyDraft()
+                } label: {
+                    Text("Apply")
+                }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.return, modifiers: [.command])
+                .disabled(!isDraftDirty)
+
+                Button {
+                    Task { await testConnection() }
+                } label: {
+                    if isTesting {
+                        ProgressView().controlSize(.small)
+                    }
+                    Text(isTesting ? "Testing..." : "Test connection")
+                }
+                .disabled(isTesting)
+
+                if let pingResult {
+                    Text(pingResult)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
+
+                Button("Revert") {
+                    draft = ServerDraft(settings: settings)
+                }
+                .buttonStyle(.link)
+                .foregroundStyle(isDraftDirty ? Color.red : Color.red.opacity(0.35))
+                .disabled(!isDraftDirty)
+            }
+            if isDraftDirty {
+                Text("You have unsaved changes. Press Apply to connect with the new credentials.")
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var appleMusicSections: some View {
+        Section("Music app") {
+            AppleMusicStatusBanner(coordinator: coordinator)
+            Text("The first time Navic queries Music, macOS asks you to grant automation access. You can revoke it later in System Settings → Privacy & Security → Automation.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var isDraftDirty: Bool {
         draft != ServerDraft(settings: settings)
     }
 
-    private var credentialsStatusKey: String {
-        "\(settings.serverURLString)|\(settings.username)|\(settings.password)|\(settings.ignoreSSLErrors)"
+    private var connectionStatusKey: String {
+        "\(settings.integrationSource.rawValue)|\(settings.serverURLString)|\(settings.username)|\(settings.password)|\(settings.ignoreSSLErrors)"
     }
 
     private func applyDraft() {
@@ -213,6 +263,10 @@ private struct ConnectionTab: View {
     }
 
     private func refreshStatus() async {
+        guard settings.integrationSource == .navidrome || settings.integrationSource == .auto else {
+            status = .checking
+            return
+        }
         guard let credentials = settings.credentials else {
             status = .failed(title: "Not configured", message: "Enter a valid server URL, username, and password.")
             return
@@ -228,6 +282,49 @@ private struct ConnectionTab: View {
         } catch {
             status = .failed(title: "Connection failed", message: error.localizedDescription)
         }
+    }
+}
+
+private struct AppleMusicStatusBanner: View {
+    @Bindable var coordinator: PlayerCoordinator
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: iconName)
+                .font(.system(size: 32, weight: .semibold))
+                .foregroundStyle(iconColor)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.headline)
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var hasMusicError: Bool {
+        coordinator.resolvedMode == .appleMusic && coordinator.lastError != nil
+    }
+
+    private var iconName: String {
+        hasMusicError ? "exclamationmark.triangle.fill" : "music.note"
+    }
+
+    private var iconColor: Color {
+        hasMusicError ? .orange : .secondary
+    }
+
+    private var title: String {
+        hasMusicError ? "Music access issue" : "Music integration"
+    }
+
+    private var message: String {
+        if hasMusicError, let error = coordinator.lastError { return error }
+        return "Start a song in the Music app to populate the widget from Music."
     }
 }
 

@@ -6,7 +6,7 @@ struct DiagnosticsView: View {
 
     var body: some View {
         Form {
-            Section("Navidrome") {
+            Section("Player") {
                 LabeledContent("Active", value: coordinator.resolvedMode.badgeText)
                 LabeledContent("Track", value: coordinator.track?.title ?? "—")
                 LabeledContent("Artist", value: coordinator.track?.artist ?? "—")
@@ -21,7 +21,7 @@ struct DiagnosticsView: View {
 
             Section("Notes") {
                 Text("""
-                Navic now works as a read-only Navidrome widget. It polls Navidrome's now-playing endpoint for the configured user and fetches artwork from the same server when cover art is available.
+                Navic mirrors the now-playing track of the integration source you pick on the Source tab — either a remote Navidrome server or the Music app running on this Mac.
                 """)
                 .font(.footnote)
                 .foregroundStyle(.secondary)

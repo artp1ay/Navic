@@ -112,18 +112,22 @@ struct MiniPlayerView: View {
     }
 
     private var secondaryText: String {
-        guard let track = coordinator.track else { return "Waiting for Navidrome playback" }
+        guard let track = coordinator.track else { return waitingText }
         if settings.showAlbum, let album = track.album, !album.isEmpty {
             return "\(track.artist) • \(album)"
         }
         return track.artist
     }
 
+    private var waitingText: String {
+        "Waiting for \(settings.integrationSource.displayName) playback"
+    }
+
     private var textRows: [TrackTextRow] {
         guard let track = coordinator.track else {
             return [
                 TrackTextRow(text: "Nothing playing", lineLimit: 1),
-                TrackTextRow(text: "Waiting for Navidrome playback", lineLimit: 1)
+                TrackTextRow(text: waitingText, lineLimit: 1)
             ]
         }
 

@@ -80,6 +80,20 @@ final class PlayerCoordinator {
         resolvedMode = stack.mode
         consecutiveFailures = 0
         hasSucceededSinceLastRebuild = false
+        // Clear any data from the previous source so the widget doesn't keep
+        // showing, say, a Navidrome track after switching to Apple Music until
+        // the first poll lands. The next refreshOnce will repopulate from the
+        // new provider.
+        artworkTask?.cancel()
+        queuePrefetchTask?.cancel()
+        artworkGeneration &+= 1
+        track = nil
+        playbackState = .empty
+        artwork = nil
+        artworkTrackId = nil
+        isArtworkLoading = false
+        lastError = nil
+        idleStartedAt = nil
         Task { await refreshOnce() }
         publishWidgetVisibility()
     }
@@ -140,6 +154,9 @@ final class PlayerCoordinator {
             let snapshot = try await nowPlaying.snapshot()
             consecutiveFailures = 0
             hasSucceededSinceLastRebuild = true
+            if let auto = stack.autoProvider {
+                resolvedMode = auto.activeMode
+            }
             let newTrack = snapshot.track
             let newState = resolvedPlaybackState(snapshot.state, newTrack: newTrack)
             let displayTrack = newTrack ?? (shouldClearIdleTrack ? nil : track)
@@ -265,12 +282,14 @@ final class PlayerCoordinator {
 }
 
 private struct ProviderSettingsSnapshot: Equatable {
+    let integrationSource: IntegrationSource
     let serverURLString: String
     let username: String
     let password: String
     let ignoreSSLErrors: Bool
 
     init(settings: AppSettings) {
+        self.integrationSource = settings.integrationSource
         self.serverURLString = settings.serverURLString
         self.username = settings.username
         self.password = settings.password

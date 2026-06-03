@@ -63,10 +63,17 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         topItem.state = settings.alwaysOnTop ? .on : .off
         menu.addItem(topItem)
 
-        if let url = navidromeWebURL {
-            let item = makeItem("Open Navidrome", #selector(openNavidromeWeb), systemImage: "arrow.up.forward.square")
-            item.representedObject = url
-            menu.addItem(item)
+        switch effectiveSourceForMenu {
+        case .navidromeReadOnly:
+            if let url = navidromeWebURL {
+                let item = makeItem("Open Navidrome", #selector(openNavidromeWeb), systemImage: "arrow.up.forward.square")
+                item.representedObject = url
+                menu.addItem(item)
+            }
+        case .appleMusic:
+            menu.addItem(makeItem("Open Music", #selector(openMusicApp), systemImage: "music.note"))
+        case .disconnected:
+            break
         }
         menu.addItem(.separator())
         menu.addItem(makeItem("Settings...", #selector(showSettings), keyEquivalent: ",", systemImage: "gearshape"))
@@ -89,6 +96,16 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         return url
     }
 
+    /// Which "Open X" item to surface. For explicit modes follow the picker;
+    /// for Auto follow whatever's actually playing right now.
+    private var effectiveSourceForMenu: ResolvedIntegrationMode {
+        switch settings.integrationSource {
+        case .navidrome: return .navidromeReadOnly
+        case .appleMusic: return .appleMusic
+        case .auto: return coordinator.resolvedMode
+        }
+    }
+
     private func menuBarIcon() -> NSImage? {
         let configuration = NSImage.SymbolConfiguration(pointSize: 18, weight: .regular)
         return NSImage(systemSymbolName: "play.circle.fill", accessibilityDescription: "Navic")?
@@ -107,6 +124,11 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     }
     @objc private func openNavidromeWeb(_ sender: NSMenuItem) {
         if let url = sender.representedObject as? URL {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    @objc private func openMusicApp() {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Music") {
             NSWorkspace.shared.open(url)
         }
     }
