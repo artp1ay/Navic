@@ -83,6 +83,39 @@ struct AppleMusicNowPlayingProviderTests {
         #expect(scripting.artworkRequestCount == 1)
     }
 
+    @Test func artworkIsRetriedAfterTransientFailure() async throws {
+        let scripting = StubAppleMusicScripting(
+            snapshot: makeSnapshot(state: .playing, persistentId: "PID-RETRY"),
+            artworkResponses: [nil, nil, TestImageFixture.pngData]
+        )
+        let provider = AppleMusicNowPlayingProvider(scripting: scripting)
+
+        _ = try await provider.snapshot()
+        _ = try await provider.snapshot()
+        _ = try await provider.snapshot()
+
+        let image = try await provider.artwork(
+            for: try #require(makeTrack(id: "PID-RETRY")),
+            size: 256
+        )
+        #expect(image != nil)
+        #expect(scripting.artworkRequestCount == 3)
+    }
+
+    @Test func artworkRetriesStopAfterBudgetIsExhausted() async throws {
+        let scripting = StubAppleMusicScripting(
+            snapshot: makeSnapshot(state: .playing, persistentId: "PID-NOART"),
+            artworkResponses: [nil]
+        )
+        let provider = AppleMusicNowPlayingProvider(scripting: scripting)
+
+        for _ in 0..<20 {
+            _ = try await provider.snapshot()
+        }
+
+        #expect(scripting.artworkRequestCount == 8)
+    }
+
     @Test func artworkLookupForOtherTrackReturnsNil() async throws {
         let scripting = StubAppleMusicScripting(
             snapshot: makeSnapshot(state: .playing, persistentId: "PID-1"),
@@ -121,11 +154,16 @@ final class StubAppleMusicScripting: AppleMusicScripting {
     var isMusicAppAvailable: Bool = true
     private(set) var artworkRequestCount = 0
     private let stubSnapshot: AppleMusicSnapshot?
-    private let stubArtwork: Data?
+    private let artworkResponses: [Data?]
 
     init(snapshot: AppleMusicSnapshot? = nil, artworkData: Data? = nil) {
         self.stubSnapshot = snapshot
-        self.stubArtwork = artworkData
+        self.artworkResponses = [artworkData]
+    }
+
+    init(snapshot: AppleMusicSnapshot?, artworkResponses: [Data?]) {
+        self.stubSnapshot = snapshot
+        self.artworkResponses = artworkResponses
     }
 
     func snapshot() async throws -> AppleMusicSnapshot? {
@@ -133,8 +171,9 @@ final class StubAppleMusicScripting: AppleMusicScripting {
     }
 
     func artworkData() async throws -> Data? {
+        let index = min(artworkRequestCount, artworkResponses.count - 1)
         artworkRequestCount += 1
-        return stubArtwork
+        return artworkResponses[index]
     }
 }
 

@@ -9,7 +9,13 @@ final class AppleMusicNowPlayingProvider: NowPlayingProvider, ArtworkProvider {
 
     private let scripting: AppleMusicScripting
     private let artworkCache = NSCache<NSString, NSImage>()
-    private var lastTrackId: String?
+    private var pendingTrackId: String?
+    private var pendingAttempts: Int = 0
+
+    /// Roughly two seconds at the 0.25s poll cadence — long enough for Music to
+    /// finish pulling cloud artwork after a track change, short enough to stop
+    /// hammering AppleScript when the track genuinely has no cover.
+    private static let maxArtworkAttempts = 8
 
     init(scripting: AppleMusicScripting) {
         self.scripting = scripting
@@ -18,7 +24,8 @@ final class AppleMusicNowPlayingProvider: NowPlayingProvider, ArtworkProvider {
 
     func snapshot() async throws -> (track: Track?, state: PlaybackState) {
         guard let snapshot = try await scripting.snapshot() else {
-            lastTrackId = nil
+            pendingTrackId = nil
+            pendingAttempts = 0
             return (nil, PlaybackState(status: .stopped))
         }
         let track = Track(from: snapshot)
@@ -36,13 +43,25 @@ final class AppleMusicNowPlayingProvider: NowPlayingProvider, ArtworkProvider {
     /// the data query fails, and the widget renders without a cover. Fetching
     /// here — back-to-back with `scripting.snapshot()` on the same serial
     /// queue — keeps the read tied to the track we just observed.
+    ///
+    /// A single failed fetch is common (Music still streaming the cover from
+    /// the cloud, or a transient race during a track change), so we retry on
+    /// subsequent polls until either we get the data or we've burned the
+    /// per-track attempt budget.
     private func prefetchArtworkIfNeeded(for track: Track) async {
-        guard lastTrackId != track.id else { return }
-        lastTrackId = track.id
-        if artworkCache.object(forKey: track.id as NSString) != nil { return }
+        let key = track.id as NSString
+        if artworkCache.object(forKey: key) != nil { return }
+
+        if pendingTrackId != track.id {
+            pendingTrackId = track.id
+            pendingAttempts = 0
+        }
+        guard pendingAttempts < Self.maxArtworkAttempts else { return }
+        pendingAttempts += 1
+
         guard let data = try? await scripting.artworkData(),
               let image = NSImage(data: data) else { return }
-        artworkCache.setObject(image, forKey: track.id as NSString)
+        artworkCache.setObject(image, forKey: key)
     }
 }
 
